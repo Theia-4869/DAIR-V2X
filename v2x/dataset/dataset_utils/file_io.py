@@ -28,6 +28,11 @@ def save_pkl(item, path):
         pickle.dump(item, f)
 
 
+def save_json(item, path):
+    with open(path, "w") as f:
+        json.dump(item, f)
+
+
 def read_pcd(pcd_path):
     pcd = pypcd.PointCloud.from_path(pcd_path)
     time = None

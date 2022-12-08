@@ -42,7 +42,7 @@ class DAIRV2XI(DAIRV2XDataset):
             print("Split File Doesn't Exists!")
             raise Exception
 
-        if split in ["train", "val", "test"]:
+        if split in ["train", "val", "test", "test_A"]:
             split_data = split_data[split]
         else:
             print("Split Method Doesn't Exists!")
@@ -96,7 +96,7 @@ class DAIRV2XV(DAIRV2XDataset):
             print("Split File Doesn't Exists!")
             raise Exception
 
-        if split in ["train", "val", "test"]:
+        if split in ["train", "val", "test", "test_A"]:
             split_data = split_data[split]
         else:
             print("Split Method Doesn't Exists!")
@@ -168,14 +168,21 @@ class VICDataset(DAIRV2XDataset):
                 filt_world = RectFilter(trans(extended_range)[0])
 
             trans_1 = vic_frame.transform("World", "Vehicle_lidar")
-            label_v = Label(osp.join(path, elem["cooperative_label_path"]), filt_world)
-            label_v["boxes_3d"] = trans_1(label_v["boxes_3d"])
+            if split in ["train", "val"]:
+                label_v = Label(osp.join(path, elem["cooperative_label_path"]), filt_world)
+                label_v["boxes_3d"] = trans_1(label_v["boxes_3d"])
             filt = RectFilter(extended_range[0])
-            tup = (
-                vic_frame,
-                label_v,
-                filt,
-            )
+            if split in ["train", "val"]:
+                tup = (
+                    vic_frame,
+                    label_v,
+                    filt,
+                )
+            elif split in ["test", "test_A"]:
+                tup = (
+                    vic_frame,
+                    filt,
+                )
             self.data.append(tup)
 
     def query_veh_segment(self, frame, sensortype="lidar", previous_only=False):
@@ -193,7 +200,7 @@ class VICDataset(DAIRV2XDataset):
             print("Split File Doesn't Exists!")
             raise Exception
 
-        if split in ["train", "val", "test"]:
+        if split in ["train", "val", "test", "test_A"]:
             split_data = split_data["cooperative_split"][split]
         else:
             print("Split Method Doesn't Exists!")
@@ -227,16 +234,28 @@ class VICAsyncDataset(VICDataset):
         super().__init__(path, args, split, sensortype, extended_range)
         self.k = args.k
         self.async_data = []
-        for vic_frame, coop_labels, filt in self.data:
-            inf_frame, delta_t = self.prev_inf_frame(
-                vic_frame.inf_frame.id[sensortype],
-                sensortype,
-            )
-            if inf_frame is None:
-                continue
-            else:
-                new_vic_frame = VICFrame(path, {}, vic_frame.veh_frame, inf_frame, delta_t, vic_frame.offset)
-                self.async_data.append((new_vic_frame, coop_labels, filt))
+        if split in ["train", "val"]:
+            for vic_frame, coop_labels, filt in self.data:
+                inf_frame, delta_t = self.prev_inf_frame(
+                    vic_frame.inf_frame.id[sensortype],
+                    sensortype,
+                )
+                if inf_frame is None:
+                    continue
+                else:
+                    new_vic_frame = VICFrame(path, {}, vic_frame.veh_frame, inf_frame, delta_t, vic_frame.offset)
+                    self.async_data.append((new_vic_frame, coop_labels, filt))
+        elif split in ["test", "test_A"]:
+            for vic_frame, filt in self.data:
+                inf_frame, delta_t = self.prev_inf_frame(
+                    vic_frame.inf_frame.id[sensortype],
+                    sensortype,
+                )
+                if inf_frame is None:
+                    continue
+                else:
+                    new_vic_frame = VICFrame(path, {}, vic_frame.veh_frame, inf_frame, delta_t, vic_frame.offset)
+                    self.async_data.append((new_vic_frame, filt))
 
         logger.info("VIC-Async {} dataset, overall {} frames".format(split, len(self.async_data)))
 

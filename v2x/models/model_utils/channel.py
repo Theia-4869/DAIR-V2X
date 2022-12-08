@@ -32,6 +32,9 @@ class Channel(object):
     def receive(self, key):
         return self.data[key] if key in self.data else None
 
+    def current_bytes(self):
+        return self.cur_bytes
+
     def average_bytes(self):
         num_frames = self.num_frames if len(self.data) == 0 else self.num_frames + 1
         return self.all_bytes / num_frames
