@@ -41,7 +41,7 @@ def test_vic(args, dataset, model):
             "boxes_3d": pred["boxes_3d"].tolist(),
             "labels_3d": pred["labels_3d"].tolist(),
             "scores_3d": pred["scores_3d"].tolist(),
-            "ab_cost": pipe.perframe_bytes(),
+            "ab_cost": pipe.current_bytes(),
         }
         pipe.flush()
         not_car_index_list = []
