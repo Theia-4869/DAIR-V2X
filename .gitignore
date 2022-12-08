@@ -5,3 +5,4 @@
 /data/vehicle-side
 /cache
 *.pth
+/data/DAIR-V2X
